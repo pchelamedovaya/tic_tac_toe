@@ -4,11 +4,18 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Client {
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.control.TextArea;
+import javafx.stage.Stage;
+
+public class Client extends Application {
     private Socket socket;
-    private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
+    private BufferedReader bufferedReader;
     private String username;
+    private TextArea chatArea;
 
     public Client(Socket socket, String username) {
         try {
@@ -21,39 +28,15 @@ public class Client {
         }
     }
 
-    public void sendMessage() {
-        try {
-            bufferedWriter.write(username);
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
+    @Override
+    public void start(Stage stage) throws IOException {
+        chatArea = new TextArea();
+        chatArea.setEditable(false);
 
-            Scanner scanner = new Scanner(System.in);
-            while (socket.isConnected()) {
-                String message = scanner.nextLine();
-                bufferedWriter.write(message);
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
-            }
-        } catch (IOException e) {
-            Helper.closeEverything(socket, bufferedWriter, bufferedReader);
-        }
-    }
-
-    public void listenForMessage() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String messageFromChat;
-                while (socket.isConnected()) {
-                    try {
-                        messageFromChat = bufferedReader.readLine();
-                        System.out.println(messageFromChat);
-                    } catch (IOException e) {
-                        Helper.closeEverything(socket, bufferedWriter, bufferedReader);
-                    }
-                }
-            }
-        }).start();
+        Scene scene = new Scene(chatArea, 400, 400);
+        stage.setScene(scene);
+        stage.setTitle("Tic Tac Toe — " + username);
+        stage.show();
     }
 
     public static void main(String[] args) throws IOException {
@@ -61,8 +44,14 @@ public class Client {
         System.out.println("Enter your username: ");
         String username = scanner.nextLine();
         Socket socket = new Socket("localhost", 1234);
-        Client client = new Client(socket, username);
-        client.listenForMessage();
-        client.sendMessage();
+
+        Platform.runLater(() -> {
+            Client client = new Client(socket, username);
+            try {
+                client.start(new Stage());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
