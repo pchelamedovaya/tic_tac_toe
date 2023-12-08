@@ -6,16 +6,24 @@ import java.util.Scanner;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.scene.control.Label;
 
 public class Client extends Application {
     private Socket socket;
     private BufferedWriter bufferedWriter;
     private BufferedReader bufferedReader;
     private String username;
-    private TextArea chatArea;
+    private static final int MIN_SIZE = 3;
+    private static final int MAX_SIZE = 5;
 
     public Client(Socket socket, String username) {
         try {
@@ -30,13 +38,67 @@ public class Client extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        chatArea = new TextArea();
-        chatArea.setEditable(false);
-
-        Scene scene = new Scene(chatArea, 400, 400);
-        stage.setScene(scene);
+        Scene initialScene = getGameSettingsScene(stage);
+        stage.setScene(initialScene);
         stage.setTitle("Tic Tac Toe — " + username);
         stage.show();
+    }
+
+    private Scene getGameScene(Stage stage, int boardSize) {
+        BorderPane borderPane = new BorderPane();
+        VBox vBoxLabel = new VBox(20);
+        vBoxLabel.setAlignment(Pos.TOP_RIGHT);
+        vBoxLabel.setPadding(new Insets(10));
+
+        VBox vBoxButton = new VBox(20);
+        vBoxButton.setAlignment(Pos.TOP_LEFT);
+        vBoxButton.setPadding(new Insets(10));
+
+        Button backButton = new Button("Back to Settings");
+        backButton.setOnAction(event -> {
+            stage.setScene(getGameSettingsScene(stage));
+        });
+
+        vBoxLabel.getChildren().addAll(new Label("Game board size: " + boardSize));
+        vBoxButton.getChildren().addAll(backButton);
+        borderPane.setLeft(vBoxButton);
+        borderPane.setRight(vBoxLabel);
+
+        return new Scene(borderPane, 450, 350);
+    }
+
+    private Scene getGameSettingsScene(Stage stage) {
+        BorderPane borderPane = new BorderPane();
+
+        VBox vBox = new VBox(20);
+        vBox.setAlignment(Pos.CENTER);
+        vBox.setPadding(new Insets(50));
+
+        Label sizeLabel = new Label("Select game board size:");
+        sizeLabel.setFont(new Font(14));
+
+        ComboBox<Integer> sizeComboBox = new ComboBox<>();
+        for (int size = MIN_SIZE; size <= MAX_SIZE; size++) {
+            sizeComboBox.getItems().add(size);
+        }
+        sizeComboBox.setValue(MIN_SIZE);
+
+        HBox hBox = new HBox(15);
+        hBox.setAlignment(Pos.CENTER);
+        hBox.setPadding(new Insets(50, 0, 0,0));
+        hBox.getChildren().addAll(sizeLabel, sizeComboBox);
+
+        Button startButton = new Button("Start game");
+        startButton.setOnAction(event -> {
+            int boardSize = sizeComboBox.getValue();
+            stage.setScene(getGameScene(stage, boardSize));
+        });
+
+        vBox.getChildren().addAll(startButton);
+        borderPane.setCenter(vBox);
+        borderPane.setTop(hBox);
+
+        return new Scene(borderPane, 350, 250);
     }
 
     public static void main(String[] args) throws IOException {
