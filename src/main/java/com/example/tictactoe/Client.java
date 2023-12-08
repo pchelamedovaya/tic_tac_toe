@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -46,6 +47,7 @@ public class Client extends Application {
 
     private Scene getGameScene(Stage stage, int boardSize) {
         BorderPane borderPane = new BorderPane();
+        borderPane.setStyle("-fx-background-color: white");
         VBox vBoxLabel = new VBox(20);
         vBoxLabel.setAlignment(Pos.TOP_RIGHT);
         vBoxLabel.setPadding(new Insets(10));
@@ -55,6 +57,7 @@ public class Client extends Application {
         vBoxButton.setPadding(new Insets(10));
 
         Button backButton = new Button("Back to Settings");
+        backButton.setStyle(Helper.STYLE_BUTTONS);
         backButton.setOnAction(event -> {
             stage.setScene(getGameSettingsScene(stage));
         });
@@ -64,11 +67,43 @@ public class Client extends Application {
         borderPane.setLeft(vBoxButton);
         borderPane.setRight(vBoxLabel);
 
-        return new Scene(borderPane, 450, 350);
+        GridPane gridPane = createTicTacToeBoard(boardSize);
+        borderPane.setCenter(gridPane);
+
+        return new Scene(borderPane, 525, 425);
     }
 
-    private Scene getGameSettingsScene(Stage stage) {
+    private GridPane createTicTacToeBoard(int boardSize) {
+        GridPane gridPane = new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setHgap(5);
+        gridPane.setVgap(5);
+
+        Button[][] buttons = new Button[boardSize][boardSize];
+        for (int row = 0; row < boardSize; row++) {
+            for (int col = 0; col < boardSize; col++) {
+                Button button = new Button();
+                switch (boardSize) {
+                    case 3:
+                        button.setStyle(Helper.STYLE_BUTTONS_FIELD_S);
+                        break;
+                    case 4:
+                        button.setStyle(Helper.STYLE_BUTTONS_FIELD_M);
+                        break;
+                    case 5:
+                        button.setStyle(Helper.STYLE_BUTTONS_FIELD_L);
+                        break;
+                }
+                buttons[row][col] = button;
+                gridPane.add(button, col, row);
+            }
+        }
+        return gridPane;
+    }
+
+    private Scene getGameSettingsScene(Stage primaryStage) {
         BorderPane borderPane = new BorderPane();
+        borderPane.setStyle("-fx-background-color: white");
 
         VBox vBox = new VBox(20);
         vBox.setAlignment(Pos.CENTER);
@@ -78,20 +113,22 @@ public class Client extends Application {
         sizeLabel.setFont(new Font(14));
 
         ComboBox<Integer> sizeComboBox = new ComboBox<>();
+        sizeComboBox.setStyle(Helper.STYLE_COMBOBOX);
         for (int size = MIN_SIZE; size <= MAX_SIZE; size++) {
             sizeComboBox.getItems().add(size);
         }
         sizeComboBox.setValue(MIN_SIZE);
 
-        HBox hBox = new HBox(15);
+        HBox hBox = new HBox(20);
         hBox.setAlignment(Pos.CENTER);
         hBox.setPadding(new Insets(50, 0, 0,0));
         hBox.getChildren().addAll(sizeLabel, sizeComboBox);
 
         Button startButton = new Button("Start game");
+        startButton.setStyle(Helper.STYLE_BUTTONS);
         startButton.setOnAction(event -> {
             int boardSize = sizeComboBox.getValue();
-            stage.setScene(getGameScene(stage, boardSize));
+            primaryStage.setScene(getGameScene(primaryStage, boardSize));
         });
 
         vBox.getChildren().addAll(startButton);
@@ -100,6 +137,7 @@ public class Client extends Application {
 
         return new Scene(borderPane, 350, 250);
     }
+
 
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
