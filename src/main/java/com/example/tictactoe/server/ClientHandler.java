@@ -1,4 +1,4 @@
-package com.example.tictactoe;
+package com.example.tictactoe.server;
 
 import java.io.*;
 import java.net.Socket;
@@ -63,7 +63,6 @@ public class ClientHandler implements Runnable {
 
     private void closeEverything(Socket socket, BufferedWriter bufferedWriter, BufferedReader bufferedReader) {
         removeClientHandler();
-        Helper.closeEverything(socket, bufferedWriter, bufferedReader);
     }
 
     private void infoMessage(String messageFromClient) {

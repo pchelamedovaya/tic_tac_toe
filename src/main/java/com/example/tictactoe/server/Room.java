@@ -1,4 +1,4 @@
-package com.example.tictactoe;
+package com.example.tictactoe.server;
 
 import java.util.ArrayList;
 import java.util.List;

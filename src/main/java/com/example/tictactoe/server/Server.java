@@ -1,4 +1,4 @@
-package com.example.tictactoe;
+package com.example.tictactoe.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -31,7 +31,7 @@ public class Server {
                 }
             }
         } catch (IOException e) {
-            closeServerSocket();
+            e.printStackTrace();
         }
     }
 
@@ -44,16 +44,6 @@ public class Server {
         Room newRoom = new Room();
         rooms.add(newRoom);
         return newRoom;
-    }
-
-    public void closeServerSocket() {
-        try {
-            if (serverSocket != null) {
-                serverSocket.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public static void main(String[] args) throws IOException {
