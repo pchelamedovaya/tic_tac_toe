@@ -1,5 +1,7 @@
 package com.example.tictactoe.server;
 
+import com.example.tictactoe.Commands;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,35 +17,54 @@ public class Server {
         this.rooms = new ArrayList<>();
     }
 
-    public void startServer() {
+    public synchronized void startServer() {
         try {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
-                ClientHandler clientHandler = new ClientHandler(socket);
+                ClientHandler clientHandler = new ClientHandler(socket, this);
 
                 Room room = getRoom();
-                if (room != null) {
-                    room.addClient(clientHandler);
-                    Thread thread = new Thread((clientHandler));
-                    thread.start();
+                room.addClient(clientHandler);
+                if (room.isFull()) {
+                    clientHandler.sendMessage("connected");
                 } else {
-                    System.out.println("Cannot add client");
+                    clientHandler.sendMessage("host");
                 }
+                Thread thread = new Thread((clientHandler));
+                thread.start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static Room getRoom() {
-        for (Room room : rooms) {
-            if (!room.isFull()) {
-                return room;
+    void startGame(ClientHandler clientHandler, int size) {
+        for (ClientHandler client : clientHandler.getRoom().getClients()) {
+            if (client != clientHandler) {
+                client.sendMessage(Commands.startGame + ":" + size);
             }
         }
-        Room newRoom = new Room();
-        rooms.add(newRoom);
-        return newRoom;
+    }
+
+    void makeMove(ClientHandler clientHandler, int x, int y) {
+        for (ClientHandler client : clientHandler.getRoom().getClients()) {
+            if (client != clientHandler) {
+                client.sendMessage(Commands.makeMove + ":" + x + "," + y);
+            }
+        }
+    }
+
+    public static synchronized Room getRoom() {
+        if (rooms.isEmpty()) {
+            Room newRoom = new Room();
+            rooms.add(newRoom);
+        }
+        Room room = rooms.get(rooms.size() - 1);
+        if (room.isFull()) {
+            room = new Room();
+            rooms.add(room);
+        }
+        return room;
     }
 
     public static void main(String[] args) throws IOException {

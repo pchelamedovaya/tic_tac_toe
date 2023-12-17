@@ -2,11 +2,9 @@ package com.example.tictactoe.client;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 
 import com.example.tictactoe.Styles;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -20,30 +18,38 @@ import javafx.stage.Stage;
 import javafx.scene.control.Label;
 
 public class Client extends Application {
-    private Socket socket;
-    private BufferedWriter bufferedWriter;
-    private BufferedReader bufferedReader;
-    private String username;
+    private ComboBox<Integer> sizeComboBox;
+    private Button[][] buttons;
+    private Connection connection;
+    private Stage stage;
     private static final int MIN_SIZE = 3;
     private static final int MAX_SIZE = 5;
 
-    public Client(Socket socket, String username) {
-        try {
-            this.socket = socket;
-            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.username = username;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void start(Stage stage) throws IOException {
+        stage.setTitle("Tic Tac Toe");
+        this.stage = stage;
+
+        Socket socket = new Socket("localhost", 1234);
+        Connection connection = new Connection(socket, this);
+        connection.start();
+        this.connection = connection;
+
+        stage.show();
+    }
+
+    public void setHostScene() {
         Scene initialScene = getGameSettingsScene(stage);
         stage.setScene(initialScene);
-        stage.setTitle("Tic Tac Toe — " + username);
-        stage.show();
+    }
+
+    public void setConnectedScene() {
+        Scene initialScene = getAwaitScene();
+        stage.setScene(initialScene);
+    }
+
+    public void setGameScene(int size) {
+        stage.setScene(getGameScene(stage, size));
     }
 
     private Scene getGameScene(Stage stage, int boardSize) {
@@ -80,7 +86,7 @@ public class Client extends Application {
         gridPane.setHgap(5);
         gridPane.setVgap(5);
 
-        Button[][] buttons = new Button[boardSize][boardSize];
+        buttons = new Button[boardSize][boardSize];
         for (int row = 0; row < boardSize; row++) {
             for (int col = 0; col < boardSize; col++) {
                 Button button = new Button();
@@ -96,6 +102,12 @@ public class Client extends Application {
                         break;
                 }
                 buttons[row][col] = button;
+                int finalRow = row;
+                int finalCol = col;
+                button.setOnAction((e) -> {
+                    connection.makeMove(finalRow, finalCol);
+                    setMove(connection.isHost(), finalRow, finalCol);
+                });
                 gridPane.add(button, col, row);
             }
         }
@@ -113,7 +125,7 @@ public class Client extends Application {
         Label sizeLabel = new Label("Select game board size:");
         sizeLabel.setFont(new Font(14));
 
-        ComboBox<Integer> sizeComboBox = new ComboBox<>();
+        sizeComboBox = new ComboBox<>();
         sizeComboBox.setStyle(Styles.STYLE_COMBOBOX);
         for (int size = MIN_SIZE; size <= MAX_SIZE; size++) {
             sizeComboBox.getItems().add(size);
@@ -122,7 +134,7 @@ public class Client extends Application {
 
         HBox hBox = new HBox(20);
         hBox.setAlignment(Pos.CENTER);
-        hBox.setPadding(new Insets(50, 0, 0,0));
+        hBox.setPadding(new Insets(50, 0, 0, 0));
         hBox.getChildren().addAll(sizeLabel, sizeComboBox);
 
         Button startButton = new Button("Start game");
@@ -130,6 +142,7 @@ public class Client extends Application {
         startButton.setOnAction(event -> {
             int boardSize = sizeComboBox.getValue();
             primaryStage.setScene(getGameScene(primaryStage, boardSize));
+            connection.startGame(boardSize);
         });
 
         vBox.getChildren().addAll(startButton);
@@ -139,20 +152,30 @@ public class Client extends Application {
         return new Scene(borderPane, 350, 250);
     }
 
+    private Scene getAwaitScene() {
+        BorderPane borderPane = new BorderPane();
+        borderPane.setStyle(Styles.STYLE_BG);
+        borderPane.setPadding(new Insets(50));
+
+        Label label = new Label("Await game start...");
+        label.setFont(new Font(14));
+
+        borderPane.setCenter(label);
+
+        return new Scene(borderPane, 350, 250);
+    }
+
+    public void setMove(boolean isTic, int x, int y) {
+        String sign;
+        if (isTic) {
+            sign = "X";
+        } else {
+            sign = "O";
+        }
+        buttons[x][y].setText(sign);
+    }
 
     public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter your username: ");
-        String username = scanner.nextLine();
-        Socket socket = new Socket("localhost", 1234);
-
-        Platform.runLater(() -> {
-            Client client = new Client(socket, username);
-            try {
-                client.start(new Stage());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        launch();
     }
 }
